@@ -1,15 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"github.com/gorilla/mux"
+	"log"
+)
+
+const (
+	STATIC_DIR = "/static/"
 )
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Hii!! Let's Go for a beer!")
-		fmt.Fprint(w, "Hii!! Let's Go for a Beer!")
-	})
+	router := mux.NewRouter()
 
-	http.ListenAndServe(":8080", nil)
+	beerController := BeerController{}
+	beerController.Initialize()
+
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "."+STATIC_DIR+"index.html")
+	})
+	router.PathPrefix(STATIC_DIR).Handler(http.StripPrefix(STATIC_DIR, http.FileServer(http.Dir("."+STATIC_DIR))))
+
+	router.HandleFunc("/beers", beerController.GetAllBeer).Methods("GET")
+	router.HandleFunc("/beers/{id}", beerController.GetBeerById).Methods("GET")
+
+	log.Fatal(http.ListenAndServe(":8080", router))
 }

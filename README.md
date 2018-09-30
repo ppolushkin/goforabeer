@@ -1,5 +1,7 @@
 # Go for a beer
 
+https://go-for-beer.azurewebsites.net/
+
 ## Prepare
 cd src/sidenis.com/goforbeer/   
 sudo docker login   

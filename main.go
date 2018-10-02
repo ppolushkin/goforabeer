@@ -10,6 +10,7 @@ const (
 	STATIC_DIR = "/static/"
 )
 
+
 func main() {
 	router := mux.NewRouter()
 
@@ -21,8 +22,9 @@ func main() {
 	})
 	router.PathPrefix(STATIC_DIR).Handler(http.StripPrefix(STATIC_DIR, http.FileServer(http.Dir("."+STATIC_DIR))))
 
-	router.HandleFunc("/beers", beerController.GetAllBeer).Methods("GET")
-	router.HandleFunc("/beers/{id}", beerController.GetBeerById).Methods("GET")
+	router.HandleFunc("/public/beers", beerController.GetAllBeerPublic).Methods("GET")
+
+	router.HandleFunc("/secured/beers", beerController.GetAllBeer).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

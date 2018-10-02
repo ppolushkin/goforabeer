@@ -3,8 +3,15 @@ package main
 import (
 	"net/http"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"strconv"
+	verifier "github.com/okta/okta-jwt-verifier-golang"
+	"fmt"
+	"strings"
+)
+
+const (
+	SPA_CLIENT_ID = "0oagfyv9iuDw0rDri0h7"
+	CLIENT_SECRET = "4y-8ZMssEm0RDq_1XNOIT5fZIywZ4VfQwwiRf9Pe"
+	ISSUER = "https://identity-np.swissre.com/oauth2/default"
 )
 
 type BeerController struct {
@@ -32,43 +39,58 @@ func (c *BeerController) Initialize() {
 // swagger:operation GET /beers beers getAllBeer
 // ---
 // summary: Returns all beer in the bar
-func (c *BeerController) GetAllBeer(w http.ResponseWriter, r *http.Request) {
+func (c *BeerController) GetAllBeerPublic(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(c.beers)
 }
 
-// swagger:operation GET /beers/{id} beers getBeerById
-// ---
-// summary: Returns beer by id
-func (c *BeerController) GetBeerById(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := parseId(vars)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid Beer ID")
+func (c *BeerController) GetAllBeer(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type, authorization")
+	w.Header().Add("Access-Control-Allow-Methods", "GET, POST,OPTIONS")
+
+	if r.Method == "OPTIONS" {
 		return
 	}
 
-	for _, item := range c.beers {
-		if item.ID == id {
-			json.NewEncoder(w).Encode(item)
-			return
-		}
+	fmt.Println("/api/messages called")
+
+	if !isAuthenticated(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("401 - You are not authorized for this request"))
+		return
 	}
-	json.NewEncoder(w).Encode(&Beer{})
-}
 
-func parseId(vars map[string]string) (uint64, error) {
-	id, err := strconv.ParseUint(vars["id"], 10, 64)
-	return id, err
-}
-
-func respondWithError(w http.ResponseWriter, code int, message string) {
-	respondWithJSON(w, code, map[string]string{"error": message})
-}
-
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
-
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(response)
+	json.NewEncoder(w).Encode(c.beers)
+
 }
+
+func isAuthenticated(r *http.Request) bool {
+	authHeader := r.Header.Get("Authorization")
+
+	fmt.Println("authHeader " + authHeader) //todo: delete that
+
+	if authHeader == "" {
+		return false
+	}
+	tokenParts := strings.Split(authHeader, "Bearer ")
+	bearerToken := tokenParts[1]
+
+	tv := map[string]string{}
+	tv["aud"] = "api://default"
+	tv["cid"] = SPA_CLIENT_ID
+	jv := verifier.JwtVerifier{
+		Issuer:           ISSUER,
+		ClaimsToValidate: tv,
+	}
+
+	_, err := jv.New().VerifyAccessToken(bearerToken)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+

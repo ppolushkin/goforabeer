@@ -6,6 +6,7 @@ import (
 	"log"
 	"github.com/gorilla/handlers"
 	"os"
+	"crypto/tls"
 )
 
 const (
@@ -14,6 +15,10 @@ const (
 
 
 func main() {
+
+	//todo: remove it
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
 	router := mux.NewRouter()
 
 	beerController := BeerController{}

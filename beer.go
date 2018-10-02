@@ -11,7 +11,7 @@ import (
 const (
 	SPA_CLIENT_ID = "0oagfyv9iuDw0rDri0h7"
 	CLIENT_SECRET = "4y-8ZMssEm0RDq_1XNOIT5fZIywZ4VfQwwiRf9Pe"
-	ISSUER = "https://identity-np.swissre.com/oauth2/default"
+	ISSUER = "https://identity-np.swissre.com/oauth2/ausggbrfgxYHfA9FH0h7"
 )
 
 type BeerController struct {

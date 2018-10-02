@@ -44,15 +44,12 @@ func (c *BeerController) GetAllBeerPublic(w http.ResponseWriter, r *http.Request
 }
 
 func (c *BeerController) GetAllBeer(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Headers", "Content-Type, authorization")
-	w.Header().Add("Access-Control-Allow-Methods", "GET, POST,OPTIONS")
 
 	if r.Method == "OPTIONS" {
 		return
 	}
 
-	fmt.Println("/api/messages called")
+	fmt.Println("/secured/beers called")
 
 	if !isAuthenticated(r) {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -74,8 +71,11 @@ func isAuthenticated(r *http.Request) bool {
 	if authHeader == "" {
 		return false
 	}
+
 	tokenParts := strings.Split(authHeader, "Bearer ")
 	bearerToken := tokenParts[1]
+
+	fmt.Println("bearerToken " + bearerToken)
 
 	tv := map[string]string{}
 	tv["aud"] = "api://default"
@@ -87,6 +87,7 @@ func isAuthenticated(r *http.Request) bool {
 
 	_, err := jv.New().VerifyAccessToken(bearerToken)
 
+	fmt.Printf("VerifyAccessToken error %s", err)
 	if err != nil {
 		return false
 	}

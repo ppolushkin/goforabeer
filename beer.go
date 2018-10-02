@@ -30,6 +30,12 @@ type Beer struct {
 	Name string `json:"name"`
 }
 
+type User struct {
+	Id  string `json:"id"`
+	Email string `json:"email"`
+	UserContext string `json:"context"`
+}
+
 func (c *BeerController) Initialize() {
 	c.beers = append(c.beers, Beer{ID: 1, Name: "Guiness extra cold"})
 	c.beers = append(c.beers, Beer{ID: 2, Name: "Nevskoe svetloe"})
@@ -63,10 +69,42 @@ func (c *BeerController) GetAllBeer(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (c *BeerController) GetUser(w http.ResponseWriter, r *http.Request) {
+
+	if !isAuthenticated(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("401 - You are not authorized for this request"))
+		return
+	}
+
+	authHeader := r.Header.Get("Authorization")
+
+	tv := map[string]string{}
+	tv["aud"] = "api://default"
+	tv["cid"] = SPA_CLIENT_ID
+	jv := verifier.JwtVerifier{
+		Issuer:           ISSUER,
+		ClaimsToValidate: tv,
+	}
+
+	tokenParts := strings.Split(authHeader, "Bearer ")
+	bearerToken := tokenParts[1]
+
+	info, err := jv.New().VerifyAccessToken(bearerToken)
+
+	swissreuid  := info.Claims["swissreuid"].(string)
+	sub  := info.Claims["sub"].(string)
+	userContext  := info.Claims["userContext"].(string)
+
+	fmt.Println(err)
+	user := User{Id: swissreuid, Email: sub, UserContext: userContext}
+	json.NewEncoder(w).Encode(user)
+}
+
 func isAuthenticated(r *http.Request) bool {
 	authHeader := r.Header.Get("Authorization")
 
-	fmt.Println("authHeader " + authHeader) //todo: delete that
+//	fmt.Println("authHeader " + authHeader) //todo: delete that
 
 	if authHeader == "" {
 		return false
@@ -74,9 +112,7 @@ func isAuthenticated(r *http.Request) bool {
 
 	tokenParts := strings.Split(authHeader, "Bearer ")
 	bearerToken := tokenParts[1]
-
-	fmt.Println("bearerToken " + bearerToken)
-
+	
 	tv := map[string]string{}
 	tv["aud"] = "api://default"
 	tv["cid"] = SPA_CLIENT_ID

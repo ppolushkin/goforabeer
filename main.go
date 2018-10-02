@@ -6,6 +6,7 @@ import (
 	"log"
 	"github.com/gorilla/handlers"
 	"os"
+	_ "crypto/tls"
 	"crypto/tls"
 )
 
@@ -31,6 +32,7 @@ func main() {
 
 	router.HandleFunc("/public/beers", beerController.GetAllBeerPublic).Methods("GET")
 	router.HandleFunc("/secured/beers", beerController.GetAllBeer).Methods("GET")
+	router.HandleFunc("/user", beerController.GetUser).Methods("GET")
 
 	//
 	// CORS + Logging handlers

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"log"
+	"github.com/gorilla/handlers"
+	"os"
 )
 
 const (
@@ -23,8 +25,17 @@ func main() {
 	router.PathPrefix(STATIC_DIR).Handler(http.StripPrefix(STATIC_DIR, http.FileServer(http.Dir("."+STATIC_DIR))))
 
 	router.HandleFunc("/public/beers", beerController.GetAllBeerPublic).Methods("GET")
-
 	router.HandleFunc("/secured/beers", beerController.GetAllBeer).Methods("GET")
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	//
+	// CORS + Logging handlers
+	//
+	allowedHeaders := handlers.AllowedHeaders([]string{"*"})
+	allowedOrigins := handlers.AllowedOrigins([]string{"*"})
+	allowedMethods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	corsRouter := handlers.CORS(allowedHeaders, allowedOrigins, allowedMethods)(router)
+	corsLoggedRouter := handlers.LoggingHandler(os.Stdout, corsRouter)
+
+	log.Fatal(http.ListenAndServe(":8080", corsLoggedRouter))
 }
